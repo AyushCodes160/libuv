@@ -1665,6 +1665,9 @@ void fs__readdir(uv_fs_t* req) {
   find_data = &dir->find_data;
   dirent_idx = 0;
 
+  if (dir->dir_handle == INVALID_HANDLE_VALUE)
+    goto done;
+
   while (dirent_idx < dir->nentries) {
     if (dir->need_find_call && FindNextFileW(dir->dir_handle, find_data) == 0) {
       if (GetLastError() == ERROR_NO_MORE_FILES)
@@ -1702,6 +1705,9 @@ void fs__readdir(uv_fs_t* req) {
     ++dirent_idx;
   }
 
+  }
+
+done:
   SET_REQ_RESULT(req, dirent_idx);
   return;
 
@@ -1717,7 +1723,8 @@ void fs__closedir(uv_fs_t* req) {
   uv_dir_t* dir;
 
   dir = req->ptr;
-  FindClose(dir->dir_handle);
+  if (dir->dir_handle != INVALID_HANDLE_VALUE)
+    FindClose(dir->dir_handle);
   uv__free(req->ptr);
   SET_REQ_RESULT(req, 0);
 }
